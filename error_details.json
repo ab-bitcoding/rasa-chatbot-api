@@ -16,5 +16,11 @@
         "msg": "An account with this email already exists.",
         "reason": "The email you are trying to register is already in use.",
         "status_code": 400
+    },
+    "phone_number_already_registered_error": {
+    "detail_type": "Phone Number Already Registered",
+    "msg": "An account with this phone number already exists.",
+    "reason": "The phone number you are trying to register is already in use.",
+    "status_code": 400
     }
 }

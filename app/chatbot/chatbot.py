@@ -3,7 +3,7 @@ from app.models import Users
 from app.config import get_db
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status,  Response
 from .chatbot_validator import CreateUserData, UserData,UpdateUserData
 from app.helper import format_response, exception_format_response, load_error_details
 from typing import List,Dict
@@ -17,17 +17,17 @@ class ChatbotRouter:
         self.router = APIRouter(prefix='/v1', tags=["chatbot_router"])
 
         self.router.post("/user", response_model=UserData)(self.create_user)
-        self.router.get("/user/{user_id}", response_model=UserData)(self.get_user)
-        self.router.put("/user/{user_id}", response_model=UserData)(self.update_user)
+        self.router.get("/user/{user_phone_number}", response_model=UserData)(self.get_user)
+        self.router.put("/user/{user_phone_number}", response_model=UserData)(self.update_user)
         self.router.get("/all_users", response_model=List[UserData])(self.get_all_users)
 
     async def get_user(
         self,
-        user_id:UUID,
+        phone_number:str,
         db: Session = Depends(get_db)
     ):
         try:
-            user = db.query(Users).filter(Users.id == user_id).first()
+            user = db.query(Users).filter(Users.phone_number == phone_number).first()
             if user is None:
                 error_type = 'user_not_found_error'
                 response = exception_format_response(
@@ -60,11 +60,12 @@ class ChatbotRouter:
     async def create_user(
         self,
         user_data: CreateUserData,
+        response: Response,
         db: Session = Depends(get_db)
     ):
         try:
-            db_user = db.query(Users).filter(Users.email == user_data.email).first()
-            if db_user:
+            db_email_user = db.query(Users).filter(Users.email == user_data.email).first()
+            if db_email_user:
                 error_type = 'email_already_registered_error'
                 response = exception_format_response(
                     detail_type=error_details[error_type]["detail_type"],
@@ -75,7 +76,18 @@ class ChatbotRouter:
                     status_code=error_details[error_type]["status_code"], detail=[response]
                 )
                 # raise HTTPException(status_code=400, detail="Email already registered")
-            
+
+            db_phone_number = db.query(Users).filter(Users.phone_number == user_data.phone_number).first()
+            if db_phone_number:
+                error_type = 'phone_number_already_registered_error'
+                response = exception_format_response(
+                    detail_type=error_details[error_type]["detail_type"],
+                    msg=error_details[error_type]["msg"],
+                    reason=error_details[error_type]["reason"],
+                )
+                raise HTTPException(
+                    status_code=error_details[error_type]["status_code"], detail=[response]
+                )
             create_user = Users(
                 username=user_data.username,
                 email=user_data.email,
@@ -86,6 +98,7 @@ class ChatbotRouter:
             db.add(create_user)
             db.commit()
             db.refresh(create_user)
+            response.status_code = status.HTTP_201_CREATED
             return create_user
 
         except HTTPException:
@@ -106,12 +119,12 @@ class ChatbotRouter:
 
     async def update_user(
             self,
-            user_id: UUID,
+            phone_number: str,
             user_data: UpdateUserData,
             db: Session = Depends(get_db)
         ):
             try:
-                user = db.query(Users).filter(Users.id == user_id).first()
+                user = db.query(Users).filter(Users.phone_number == phone_number).first()
                 if user is None:
                     error_type = 'user_not_found_error'
                     response = exception_format_response(
@@ -153,6 +166,7 @@ class ChatbotRouter:
                 raise HTTPException(
                     status_code=error_details[error_type]["status_code"], detail=[response]
                 )
+
     async def get_all_users(
         self,
         db: Session = Depends(get_db)

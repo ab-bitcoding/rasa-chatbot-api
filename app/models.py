@@ -17,7 +17,7 @@ class Users(Base):
     username = Column(String(50), nullable=False)
     email = Column(String(100), unique=True, nullable=False)
     age = Column(Integer, nullable=False)  # Age is optional
-    phone_number = Column(String(15), nullable=False)  # Assuming phone number is a string
+    phone_number = Column(String(15), unique=True, nullable=False)  # Assuming phone number is a string
     income = Column(Integer, nullable=False)  # Assuming income is an integer (e.g., cents or dollars)
     created_at = Column(DateTime(timezone=True))
     updated_at = Column(DateTime(timezone=True)) 
