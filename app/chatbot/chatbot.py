@@ -6,7 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from fastapi import APIRouter, Depends, HTTPException, status,  Response
 from .chatbot_validator import CreateUserData, UserData,UpdateUserData
 from app.helper import format_response, exception_format_response, load_error_details
-from typing import List,Dict
+from typing import List
 error_details = load_error_details('error_details.json')
 
 class ChatbotRouter:
@@ -17,8 +17,8 @@ class ChatbotRouter:
         self.router = APIRouter(prefix='/v1', tags=["chatbot_router"])
 
         self.router.post("/user", response_model=UserData)(self.create_user)
-        self.router.get("/user/{user_phone_number}", response_model=UserData)(self.get_user)
-        self.router.put("/user/{user_phone_number}", response_model=UserData)(self.update_user)
+        self.router.get("/user/{phone_number}", response_model=UserData)(self.get_user)
+        self.router.put("/user/{phone_number}", response_model=UserData)(self.update_user)
         self.router.get("/all_users", response_model=List[UserData])(self.get_all_users)
 
     async def get_user(
@@ -36,7 +36,7 @@ class ChatbotRouter:
                     reason=error_details[error_type]["reason"],
                 )
                 raise HTTPException(
-                    status_code=error_details[error_type]["status_code"], detail=[response]
+                    status_code=error_details[error_type]["status_code"], detail=response
                 )
             return user
         
@@ -75,7 +75,6 @@ class ChatbotRouter:
                 raise HTTPException(
                     status_code=error_details[error_type]["status_code"], detail=[response]
                 )
-                # raise HTTPException(status_code=400, detail="Email already registered")
 
             db_phone_number = db.query(Users).filter(Users.phone_number == user_data.phone_number).first()
             if db_phone_number:
