@@ -39,8 +39,8 @@ class CreateUserData(BaseModel):
 
     @validator('phone_number')
     def validate_phone_number(cls, value):
-        if not len(value) == 15:
-            raise ValueError("Phone Number must be 10 digits long")
+        if not 9 < len(value) <= 15:
+            raise ValueError("Phone Number must be atleast 10 digits long")
         if not value.isdigit():
             raise ValueError("Phone Number must be numeric")
         return value
